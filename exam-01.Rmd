@@ -84,6 +84,16 @@ Don't forget that you will need to configure your user name and email for Git to
 In addition to `tidyverse`, you will need the `nycflights13` package for the data.
 You will first need to install these packages and then load them.
 
+```{r include = FALSE}
+#install packages
+install.packages("tidyverse")
+install.packages("nycflights13")
+
+#load packages
+library(tidyverse)
+library(nycflights13)
+```
+
 ## The data
 
 The `nycflights13` package contains information about all flights that departed from NYC (e.g. EWR, JFK and LGA) in 2013.
