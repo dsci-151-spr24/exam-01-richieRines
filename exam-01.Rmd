@@ -92,6 +92,17 @@ nycflights13::flights %>%
 
 2.  **Question 2 (10 points)** - Which airlines have the most flights departing from NYC airports in 2013? Make a table that lists these in descending order of frequency and shows the number of flights for each airline. In your narrative mention the names of the airlines as well. *Hint:* You can use the `airlines` dataset to look up the airline name based on `carrier` code.
 
+***We combine the flights data frame and the airlines data frame using `inner_join` and join them by "carrier". We then use `count` to display the frequency of all the airline names and, using the `arrange` function, sort them in descending order.***
+
+```{r}
+nycflights13::flights %>%
+  inner_join(nycflights13::airlines, by = "carrier") %>%
+  count(name) %>%
+  arrange(desc(n))
+```
+
+***The top three airlines are United Air Lines Inc. (58665), JetBlue Airways (54635), and ExpressJet Airlines Inc (54173).***
+
 3.  **Question 3 (10 points)** - Consider only flights that have non-missing arrival delay information. Your answer should include the name of the carrier in addition to the carrier code and the values asked.
 
     a\. Which carrier had the highest mean arrival delay?
