@@ -59,7 +59,8 @@ Don't forget that you will need to configure your user name and email for Git to
 In addition to `tidyverse`, you will need the `nycflights13` package for the data. You will first need to install these packages and then load them.
 
 ```{r include = FALSE}
-#load packages
+#| label: load_packages
+
 library(tidyverse)
 library(nycflights13)
 ```
@@ -95,6 +96,8 @@ nycflights13::flights %>%
 ***We combine the flights data frame and the airlines data frame using `inner_join` and join them by "carrier". We then use `count` to display the frequency of all the airline names and, using the `arrange` function, sort them in descending order.***
 
 ```{r}
+#| label: top_airlines
+
 nycflights13::flights %>%
   inner_join(nycflights13::airlines, by = "carrier") %>%
   count(name) %>%
@@ -105,11 +108,47 @@ nycflights13::flights %>%
 
 3.  **Question 3 (10 points)** - Consider only flights that have non-missing arrival delay information. Your answer should include the name of the carrier in addition to the carrier code and the values asked.
 
-    a\. Which carrier had the highest mean arrival delay?
+***We start by pipelining the `flights` data frame. We then `filter` the data to exclude any N/A values in the `arr_delay` variable. Then `group` them by "carrier" and `summarise` the mean of `arr_delay`. Arrange by descending mean values and `inner_join` it with `airline` by "carrier".***
 
-    b\. Which carrier had the lowest mean arrival delay?
+```{r}
+#| label: carrier_delay
+
+nycflights13::flights %>%
+  filter(!is.na(arr_delay)) %>%
+  group_by(carrier) %>%
+  summarise(mean = mean(arr_delay)) %>%
+  arrange(desc(mean)) %>%
+  inner_join(nycflights13::airlines, by = "carrier") %>%
+  print()
+```
+
+Which carrier had the highest mean arrival delay?
+***Frontier Arlines Inc. (F9) had the highest mean with 21.9***
+
+Which carrier had the lowest mean arrival delay?
+***Alaska Airlines Inc. (AS) has the lowest mean with -9.9 ***
 
 4.  **Question 4 (10 points)** - What was the mean temperature at the origin airport on the day with the highest departure delay? Your answer should include the name of origin airport, the date with the highest departure delay, and the mean temperature on that day.
+
+***First we create a new dataset called `high_delay` to find the highest delay. We create a variable called `date` (which is exactly that) using `mutate` and `str_c` to connect the strings. Then we arrange the list by descending departure delays and keep only the top one. Next, we use the weather data frame. We make another `date` variable just like before. Then we can filter the data frame by the date of the highest delay and the `origin` of the highest delay. Finally, we `select` and `summarise` the origin, temp, and date.***
+
+```{r}
+#| label: temp_high_delay
+
+high_delay <- nycflights13::flights %>%
+  mutate(date = str_c(month, "/", day, "/", year)) %>%
+  arrange(desc(dep_delay)) %>%
+  slice(1)
+
+nycflights13::weather %>%
+  mutate(date = str_c(month, "/", day, "/", year)) %>%
+  filter(date == high_delay$date,
+         origin == high_delay$origin) %>%
+  select(origin, temp, date) %>%
+  summarise(origin = origin[1], date = date[1], temp = mean(temp))
+```
+
+***A flight out of JFK on 1/9/2013 had the highest departure delay. The mean temperature for that day was 42.7 degrees.***
 
 5.  **Question 5 (15 points)** - Consider breaking the day into four time intervals: 12:01am-6am, 6:01am-12pm, 12:01pm-6pm, 6:01pm-12am.
 
