@@ -152,22 +152,92 @@ nycflights13::weather %>%
 
 5.  **Question 5 (15 points)** - Consider breaking the day into four time intervals: 12:01am-6am, 6:01am-12pm, 12:01pm-6pm, 6:01pm-12am.
 
+***First we create a new set called `flight_time` and base it off of `flights`. Then we `mutate` a variable called `time_intv` and make different time intervals. If the numbers look a but confusing (such as `6:11` and `12:17`) it's because they use military time.***
+
+```{r}
+#| label: time_intervals
+
+flight_time <- nycflights13::flights %>%
+  mutate(time_intv = case_when(hour %in% 0:5 ~ "12:01am-6:00am",
+                               hour %in% 6:11 ~ "6:01am-12:00pm",
+                               hour %in% 12:17 ~ "12:01pm-6:00pm",
+                               hour %in% 18:24 ~ "6:01pm-12:00am"))
+```
+
     a\. Calculate the proportion of flights that are delayed at departure at each of these time intervals.
+```{r}
+flight_time %>%
+  group_by(time_intv) %>%
+  reframe(., delay_proportion = group_size(filter(., dep_delay > 0))/group_size(.)) %>%
+  slice(1, 6, 11, 16) #sliced to eliminate repeats
+```
+***From 12am to 12pm, the proportion is just about 25%. Then from 12pm to 6pm, it's about 44%. Finally, from 6pm to 12am, it goes up to 50%.***
 
     b\. Comment on how the likelihood of being delayed change throughout the day?
+***The chances of a flight getting delayed increase as the day progresses.***
 
 6.  **Question 6 (15 points)** - Find the flight with the longest air time.
 
-    a\. How long is this flight?
+***This question is a bit lighter when it comes to the code. We start by making a data frame called `long_flight` using the `flights` data. Then we use `slice_max` to take the top `air_time` and join the data frame with the `planes` data by "tailnum". We join the data frames so we can see what plane the particular flight used and how many seats it had.***
 
+```{r}
+#| label: long_time
+
+long_flight <- nycflights13::flights %>%
+  slice_max(air_time) %>%
+  inner_join(nycflights13::planes, "tailnum")
+```
+
+    a\. How long is this flight?
+  ***It was `r long_flight$air_time` minutes long***
+    
     b\. What city did it fly to?
+  ***It flew to `r long_flight$dest` (Honolulu, Hawaii)***
 
     c\. How many seats does the plane that flew this flight have?
+  ***It has `r long_flight$seats` seats***
 
 7.  **Question 7 (15 pts)** - The `airports` data frame contains information on a large number of primarily American airports. These data include location information for these airports in the form of latitude and longitude coordinates. In this question we limit our focus to the [Contiguous United States](https://en.wikipedia.org/wiki/Contiguous_United_States). Visualize and describe the distribution of the longitudes of airports in the Contiguous United States. What does this tell you about the geographical distribution of these airports? *Hint:* You will first need to limit your analysis to the Contiguous United States. [This Wikipedia article](https://en.wikipedia.org/wiki/List_of_extreme_points_of_the_United_States) can help, but you're welcomed to use other resources as well. Make sure to cite whatever resource you use.
+
+***I used the [Wikipedia article](https://en.wikipedia.org/wiki/List_of_extreme_points_of_the_United_States) to find the `long` and `lat` values of the contiguous US. I then filtered the `airports` data frame to stay within those limits. Then I used `ggplot` to make a graph and labeled it with `labs`.***
+
+```{r}
+#| label: distb_long
+
+nycflights13::airports %>%
+  filter(lat < 49.00239,
+         lat > 24.44667,
+         lon < -66.9498,
+         lon > -124.785) %>%
+  ggplot(aes(x = lon, y = lat)) +
+  geom_point() +
+  labs(title = "Distribution of the longitudes of airports", subtitle = "in the United States", x = "Longitude", y = "Latitude")
+```
+
+***The graph shows that the distribution of airports is actually really even across the whole country. However there is an abundance of airports along the east coast a slightly-more-than-average amount dotted along the west coast.***
 
 8.  **Question 8 (15 pts)** - Recreate the plot included below using the `flights` data. Once you have created the visualization, in no more than one paragraph, describe what you think the point of this visualization might be. *Hint:* The visualization uses the variable `arrival`, which is not included in the `flights` data frame. You will have to create `arrival` yourself, it is a categorical variable that is equal to `"ontime"` when `arr_delay <= 0` and `"delayed"` when `arr_delay > 0`.
 
 ![](img/plot-to-recreate.png)
 
+```{r}
+#| label: performance_plot
+
+nycflights13::flights %>%
+  filter(dest %in% c("PHL", "RDU"),
+         !is.na(arr_delay),
+         month == 12) %>%
+  mutate(arrival = if_else(arr_delay > 0, "delayed", "ontime")) %>%
+  ggplot(aes(x = arrival, y = dep_delay, color = dest)) +
+  geom_boxplot() +
+  theme(aspect.ratio = 0.5) +
+  facet_grid(dest ~ origin) +
+  labs(x = "Arrival", y = "Departure delay", color = "Destination", 
+       title = "On time performance of NYC flights", subtitle = "December 2013")
+```
+
+***The plot compares flight departure delays in December 2013 in and out of different airports. It also shows if the flight arrived on time or if it happened to be late.***
+
 **Extra Credit (5 pts)** - Create a visualization that effectively shows if there is a relationship between the average daily departure delay and the average daily temperature for all three New York city airports. Your answer must be given in a single pipe. (You should only spend time on this question once you have finished answering the others)
+
+*I was not able to figure out how to do this*
